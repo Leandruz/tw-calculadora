@@ -252,13 +252,28 @@ if simular_btn:
         df_grafico = pd.DataFrame(dados)
         df_grafico["Capacidade Restante"] = df_grafico["Capacidade Restante"].apply(lambda x: f"{x:.1f}%")
         
-        fig = px.line(df_grafico, x="Onda", y="População Restante", title="Curva de Resistência da Aldeia", markers=True)
-        fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='#f8fafc'),
-            xaxis=dict(showgrid=False, color='#94a3b8'), yaxis=dict(showgrid=True, gridcolor='#334155', color='#94a3b8'),
-            margin=dict(l=0, r=0, t=40, b=0)
+        from plotly.subplots import make_subplots
+        
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        fig.add_trace(
+            go.Scatter(x=df_grafico["Onda"], y=df_grafico["População Restante"], name="População",
+                       line=dict(color="#f43f5e", width=3), mode='lines+markers', marker=dict(size=8, color="#f43f5e")),
+            secondary_y=False,
         )
-        fig.update_traces(line=dict(color="#f43f5e", width=3), marker=dict(size=8, color="#f43f5e"))
+        fig.add_trace(
+            go.Scatter(x=df_grafico["Onda"], y=df_grafico["Nível Muralha"], name="Muralha",
+                       line=dict(color="#eab308", width=3, dash='dot'), mode='lines+markers', marker=dict(size=8, color="#eab308")),
+            secondary_y=True,
+        )
+        fig.update_layout(
+            title="Curva de Resistência da Aldeia",
+            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color='#f8fafc'),
+            xaxis=dict(showgrid=False, color='#94a3b8'),
+            margin=dict(l=0, r=0, t=40, b=0),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        fig.update_yaxes(title_text="População Restante", showgrid=True, gridcolor='#334155', color='#f43f5e', secondary_y=False)
+        fig.update_yaxes(title_text="Nível Muralha", showgrid=False, color='#eab308', range=[0, 20], secondary_y=True)
         st.plotly_chart(fig, use_container_width=True)
         
         with st.expander("Ver Detalhes por Onda"):
