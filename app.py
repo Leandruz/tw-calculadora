@@ -211,14 +211,14 @@ st.markdown("<hr>", unsafe_allow_html=True)
 
 c1, c2, c3, c4 = st.columns(4)
 with c1: 
-    qtd_fulls_def = st.number_input("Fulls Defensivos Hospedados", min_value=0.1, max_value=100.0, value=1.0, step=0.5)
+    qtd_fulls_def = st.number_input("Multiplicar a defesa em", min_value=0.1, max_value=100.0, value=1.0, step=0.5)
 with c2: 
     muralha_inicial = st.number_input("Nível da Muralha Inicial", min_value=0, max_value=20, value=20, step=1)
 with c3: 
-    sorte_ondas = st.slider("Sorte dos Ataques (%)", -25.0, 25.0, 0.0, 0.1)
+    sorte_ondas = st.slider("Sorte (%)", -25.0, 25.0, 0.0, 0.1)
 with c4:
-    fe_ataque = st.checkbox("Fé no Ataque (100%)", value=True)
-    fe_defesa = st.checkbox("Fé na Defesa (100%)", value=True)
+    fe_ataque = st.checkbox("Fé do Ataque (100%)", value=True)
+    fe_defesa = st.checkbox("Fé da Defesa (100%)", value=True)
 
 c5, c6, c7, c8 = st.columns(4)
 with c5:
@@ -244,8 +244,8 @@ if simular_btn:
         
         m1, m2, m3 = st.columns(3)
         with m1: st.metric("População Total", f"{pop_inicial:,.0f}".replace(',','.'))
-        with m2: st.metric("Ondas Suportadas", f"{ondas}")
-        with m3: st.metric("Muralha Pós 1º Ataque", f"Nível {mur_pos_primeiro}")
+        with m2: st.metric("Ataques Suportados", f"{ondas}")
+        with m3: st.metric("Muralha Após 1º Ataque", f"Nível {mur_pos_primeiro}")
         
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -276,13 +276,13 @@ if simular_btn:
         fig.update_yaxes(title_text="Nível Muralha", showgrid=False, color='#eab308', range=[0, 20], secondary_y=True)
         st.plotly_chart(fig, use_container_width=True)
         
-        with st.expander("Ver Detalhes por Onda"):
+        with st.expander("Ver Detalhes por Ataques"):
             st.dataframe(df_grafico, use_container_width=True, hide_index=True)
             
         st.markdown("<hr>", unsafe_allow_html=True)
         
         st.markdown("### 📈 Análise de Escalabilidade (Sweet Spot)")
-        st.markdown("<div class='subtitle'>Quantas ondas você suportaria se hospedasse diferentes volumes de fulls?</div>", unsafe_allow_html=True)
+        st.markdown("<div class='subtitle'>Quantos ataques você suportaria se hospedasse diferentes volumes de fulls?</div>", unsafe_allow_html=True)
         
         fulls_to_test = [1, 2, 3, 4, 5, 6, 8, 10, 15]
         sweet_data = []
