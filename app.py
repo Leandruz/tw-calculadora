@@ -50,6 +50,9 @@ UNIDADES = [
     ('cavalaria_pesada', 'Cav. Pesada', 'https://dsbr.innogamescdn.com/asset/1d2499b/graphic/unit/unit_heavy.png', {'atk': 150, 'def_inf': 200, 'def_cav': 80, 'def_arq': 180, 'tipo_atk': 'cav', 'pop': 6}),
     ('ariete', 'Aríete', 'https://dsbr.innogamescdn.com/asset/1d2499b/graphic/unit/unit_ram.png', {'atk': 2, 'def_inf': 20, 'def_cav': 50, 'def_arq': 20, 'tipo_atk': 'inf', 'pop': 5}),
     ('catapulta', 'Catapulta', 'https://dsbr.innogamescdn.com/asset/1d2499b/graphic/unit/unit_catapult.png', {'atk': 100, 'def_inf': 100, 'def_cav': 50, 'def_arq': 100, 'tipo_atk': 'inf', 'pop': 8}),
+    ('paladino', 'Paladino', 'https://dsbr.innogamescdn.com/asset/1d2499b/graphic/unit/unit_knight.png', {'atk': 150, 'def_inf': 250, 'def_cav': 400, 'def_arq': 150, 'tipo_atk': 'cav', 'pop': 10}),
+    ('nobre', 'Nobre', 'https://dsbr.innogamescdn.com/asset/1d2499b/graphic/unit/unit_snob.png', {'atk': 30, 'def_inf': 100, 'def_cav': 50, 'def_arq': 100, 'tipo_atk': 'inf', 'pop': 100}),
+    ('explorador', 'Explorador', 'https://dsbr.innogamescdn.com/asset/1d2499b/graphic/unit/unit_spy.png', {'atk': 0, 'def_inf': 2, 'def_cav': 1, 'def_arq': 2, 'tipo_atk': 'cav', 'pop': 2}),
     ('milicia', 'Milícia', 'https://dsbr.innogamescdn.com/asset/1d2499b/graphic/unit/unit_militia.png', {'atk': 5, 'def_inf': 15, 'def_cav': 45, 'def_arq': 25, 'tipo_atk': 'inf', 'pop': 0})
 ]
 UNIDADES_DICT = {u[0]: u[3] for u in UNIDADES}
@@ -61,11 +64,23 @@ def calcular_reducao_muralha(arietes, muralha_atual):
     if muralha_atual <= 0 or not arietes or arietes <= 0: return 0
     return arietes / 21.5
 
-def simular_combate(atacante, defensor, muralha=20, sorte=0.0, fe_ataque=True, fe_defesa=True, bonus_noturno=0.0):
+def simular_combate(atacante, defensor, muralha=20, sorte=0.0, fe_ataque=True, fe_defesa=True, bonus_noturno=0.0, bonus_atacante=None, bonus_defensor=None):
+    if bonus_atacante is None: bonus_atacante = []
+    if bonus_defensor is None: bonus_defensor = []
     atk_inf = atk_cav = atk_arq = 0
+    dano_edificio_mod = 1.0
+    
     for unidade, qtd in atacante.items():
         if unidade in UNIDADES_DICT and qtd:
-            poder = qtd * UNIDADES_DICT[unidade]['atk']
+            atk_mod = 1.0
+            for b in bonus_atacante:
+                if unidade in b['unidades']:
+                    if b['efeito'] == 'poder de ataque':
+                        atk_mod += b['magnitude'] / 100.0
+                    elif b['efeito'] == 'Dano do edifício' and unidade in ['ariete', 'catapulta']:
+                        dano_edificio_mod += b['magnitude'] / 100.0
+                        
+            poder = qtd * (UNIDADES_DICT[unidade]['atk'] * atk_mod)
             tipo = UNIDADES_DICT[unidade]['tipo_atk']
             if tipo == 'inf': atk_inf += poder
             elif tipo == 'cav': atk_cav += poder
@@ -84,11 +99,21 @@ def simular_combate(atacante, defensor, muralha=20, sorte=0.0, fe_ataque=True, f
     prop_arq = atk_arq / atk_base if atk_base > 0 else 0
 
     def_inf_total = def_cav_total = def_arq_total = 0
+    defesa_muralha_mod = 1.0
+    
     for unidade, qtd in defensor.items():
         if unidade in UNIDADES_DICT and qtd:
-            def_inf_total += qtd * UNIDADES_DICT[unidade]['def_inf']
-            def_cav_total += qtd * UNIDADES_DICT[unidade]['def_cav']
-            def_arq_total += qtd * UNIDADES_DICT[unidade]['def_arq']
+            def_mod = 1.0
+            for b in bonus_defensor:
+                if unidade in b['unidades']:
+                    if b['efeito'] == 'poder de defesa':
+                        def_mod += b['magnitude'] / 100.0
+                    elif b['efeito'] == 'Nível máximo de defesa da muralha' and unidade == 'ariete':
+                        defesa_muralha_mod += b['magnitude'] / 100.0
+                        
+            def_inf_total += qtd * (UNIDADES_DICT[unidade]['def_inf'] * def_mod)
+            def_cav_total += qtd * (UNIDADES_DICT[unidade]['def_cav'] * def_mod)
+            def_arq_total += qtd * (UNIDADES_DICT[unidade]['def_arq'] * def_mod)
 
     def_efetiva = (def_inf_total * prop_inf) + (def_cav_total * prop_cav) + (def_arq_total * prop_arq)
     
@@ -97,14 +122,14 @@ def simular_combate(atacante, defensor, muralha=20, sorte=0.0, fe_ataque=True, f
         def_efetiva *= (1 + (bonus_noturno / 100.0))
         
     arietes = atacante.get('ariete', 0)
-    base_drop = calcular_reducao_muralha(arietes, muralha)
+    base_drop = calcular_reducao_muralha(arietes, muralha) * dano_edificio_mod
     queda_combate = min(muralha / 2.0, base_drop)
     
     muralha_combate = max(0, int(round(muralha - queda_combate)))
     defesa_base_aldeia = 50 + (50 * muralha_combate)
     bonus_muralha = 1.037 ** muralha_combate
     
-    def_total = (def_efetiva * bonus_muralha) + defesa_base_aldeia
+    def_total = (def_efetiva * bonus_muralha) + (defesa_base_aldeia * defesa_muralha_mod)
     
     if not fe_defesa:
         def_total *= 0.5
@@ -136,7 +161,7 @@ def simular_combate(atacante, defensor, muralha=20, sorte=0.0, fe_ataque=True, f
     return relatorio
 
 
-def simular_cenario(ataque_base, defesa_base, qtd_fulls, muralha_inicial, sorte_ondas, limit=200, fe_ataque=True, fe_defesa=True, bn=0.0):
+def simular_cenario(ataque_base, defesa_base, qtd_fulls, muralha_inicial, sorte_ondas, limit=200, fe_ataque=True, fe_defesa=True, bn=0.0, bonus_atacante=None, bonus_defensor=None):
     defesa_atual = {k: round((v or 0) * qtd_fulls) for k, v in defesa_base.items()}
     populacao_inicial = get_populacao(defesa_atual)
     
@@ -149,7 +174,7 @@ def simular_cenario(ataque_base, defesa_base, qtd_fulls, muralha_inicial, sorte_
     
     while True:
         onda_atual += 1
-        res = simular_combate(ataque_base, defesa_atual, muralha_atual, sorte_ondas, fe_ataque, fe_defesa, bn)
+        res = simular_combate(ataque_base, defesa_atual, muralha_atual, sorte_ondas, fe_ataque, fe_defesa, bn, bonus_atacante, bonus_defensor)
         
         for u, stats in res['perdas_defensor'].items():
             defesa_atual[u] = stats['restantes']
@@ -188,6 +213,8 @@ with st.expander("🛠️ Instalar Script de Importação Automática (Tampermon
 
 if 'init_done' not in st.session_state:
     st.session_state['init_done'] = True
+    st.session_state['bonus_atacante'] = []
+    st.session_state['bonus_defensor'] = []
     default_atk = {'barbaro': 6000, 'cavalaria_leve': 3000, 'ariete': 300}
     default_def = {'lanceiro': 10000, 'espadachim': 10000}
     query_params = st.query_params
@@ -207,6 +234,43 @@ if 'init_done' not in st.session_state:
         else:
             # Se for importação e não veio essa tropa, zera (None). Senão, usa padrão.
             st.session_state[f'def_{k}'] = None if is_import else default_def.get(k, None)
+            
+    if 'bonus' in query_params:
+        bonuses = query_params.get_all('bonus')
+        for b in bonuses:
+            parts = b.split('|')
+            if len(parts) >= 3:
+                unidade = parts[0]
+                try:
+                    magnitude = int(parts[1])
+                except ValueError:
+                    continue
+                efeito_str = parts[2].lower()
+                
+                efeitos = []
+                if "ataque e defesa" in efeito_str:
+                    efeitos.extend(["poder de ataque", "poder de defesa"])
+                elif "dano" in efeito_str:
+                    efeitos.append("Dano do edifício")
+                elif "muralha" in efeito_str or (unidade == "global" and ("cerco" in efeito_str or "força de defesa" in efeito_str)):
+                    efeitos.append("Nível máximo de defesa da muralha")
+                    unidade = "ariete"  # A lógica interna vincula muralha ao ariete (atacante que reduz)
+                elif "ataque" in efeito_str:
+                    efeitos.append("poder de ataque")
+                elif "defesa" in efeito_str:
+                    efeitos.append("poder de defesa")
+                else:
+                    # Se não bater com nada conhecido, insere como string bruta (pode não ter efeito matemático sem atualização futura, mas aparecerá na lista)
+                    efeitos.append(efeito_str)
+                    
+                if unidade == "global" and not efeitos: continue # Ignora globais não mapeados
+                
+                for ef in efeitos:
+                    st.session_state['bonus_defensor'].append({
+                        'efeito': ef,
+                        'magnitude': magnitude,
+                        'unidades': [unidade]
+                    })
 
 def limpar_tropas():
     for k in [u[0] for u in UNIDADES]:
@@ -234,6 +298,57 @@ with st.container():
     for i, (key, nome, _, _) in enumerate(UNIDADES):
         with cols_def[i+1]:
             padrao_def[key] = st.number_input(f"def_{key}", value=None, min_value=0, step=50, placeholder="0", label_visibility="collapsed", key=f"def_{key}")
+
+st.markdown("<hr>", unsafe_allow_html=True)
+
+with st.expander("✨ Efeitos e Bônus"):
+    st.markdown("<div class='subtitle'>Adicione bônus de itens do paladino, tribo ou bandeiras.</div>", unsafe_allow_html=True)
+    c_atk, c_def = st.columns(2)
+    
+    opcoes_efeitos = ["poder de ataque", "poder de defesa", "Dano do edifício", "Nível máximo de defesa da muralha", "escondido"]
+    opcoes_magnitude = [f"+{i}%" for i in range(1, 101)]
+    nomes_unidades = [u[1] for u in UNIDADES]
+    unidades_dict_nome_para_key = {u[1]: u[0] for u in UNIDADES}
+    
+    with c_atk:
+        st.markdown("### ⚔️ Bônus do Atacante")
+        ef_atk = st.selectbox("Efeito:", opcoes_efeitos, key="ef_atk")
+        mag_atk = st.selectbox("Magnitude:", opcoes_magnitude, key="mag_atk")
+        uni_atk = st.multiselect("Unidades Afetadas:", nomes_unidades, key="uni_atk")
+        if st.button("Adicionar ao atacante", use_container_width=True):
+            if uni_atk:
+                val = int(mag_atk.replace("+", "").replace("%", ""))
+                st.session_state['bonus_atacante'].append({'efeito': ef_atk, 'magnitude': val, 'unidades': [unidades_dict_nome_para_key[u] for u in uni_atk]})
+                st.rerun()
+            else:
+                st.warning("Selecione ao menos uma unidade.")
+                
+        if st.session_state['bonus_atacante']:
+            for i, b in enumerate(st.session_state['bonus_atacante']):
+                st.info(f"{b['efeito']} (+{b['magnitude']}%) para {', '.join([u.capitalize() for u in b['unidades']])}")
+            if st.button("Limpar bônus de ataque", key="clear_atk"):
+                st.session_state['bonus_atacante'] = []
+                st.rerun()
+                
+    with c_def:
+        st.markdown("### 🛡️ Bônus do Defensor")
+        ef_def = st.selectbox("Efeito:", opcoes_efeitos, key="ef_def")
+        mag_def = st.selectbox("Magnitude:", opcoes_magnitude, key="mag_def")
+        uni_def = st.multiselect("Unidades Afetadas:", nomes_unidades, key="uni_def")
+        if st.button("Adicionar ao defensor", use_container_width=True):
+            if uni_def:
+                val = int(mag_def.replace("+", "").replace("%", ""))
+                st.session_state['bonus_defensor'].append({'efeito': ef_def, 'magnitude': val, 'unidades': [unidades_dict_nome_para_key[u] for u in uni_def]})
+                st.rerun()
+            else:
+                st.warning("Selecione ao menos uma unidade.")
+                
+        if st.session_state['bonus_defensor']:
+            for i, b in enumerate(st.session_state['bonus_defensor']):
+                st.success(f"{b['efeito']} (+{b['magnitude']}%) para {', '.join([u.capitalize() for u in b['unidades']])}")
+            if st.button("Limpar bônus de defesa", key="clear_def"):
+                st.session_state['bonus_defensor'] = []
+                st.rerun()
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -266,7 +381,7 @@ if simular_btn:
     else:
         st.markdown("<hr>", unsafe_allow_html=True)
         bn_val = bn_pct if is_night_bonus else 0.0
-        ondas, mur_final, pop_inicial, dados = simular_cenario(ataque_base, defesa_base, qtd_fulls_def, muralha_inicial, sorte_ondas, 200, fe_ataque, fe_defesa, bn_val)
+        ondas, mur_final, pop_inicial, dados = simular_cenario(ataque_base, defesa_base, qtd_fulls_def, muralha_inicial, sorte_ondas, 200, fe_ataque, fe_defesa, bn_val, st.session_state.get('bonus_atacante', []), st.session_state.get('bonus_defensor', []))
         
         mur_pos_primeiro = dados[1]["Nível Muralha"] if len(dados) > 1 else muralha_inicial
         
@@ -315,7 +430,7 @@ if simular_btn:
         fulls_to_test = [1, 2, 3, 4, 5, 6, 8, 10, 15]
         sweet_data = []
         for f in fulls_to_test:
-            ondas_f, _, pop_f, _ = simular_cenario(ataque_base, defesa_base, f, muralha_inicial, sorte_ondas, 1000, fe_ataque, fe_defesa, bn_val)
+            ondas_f, _, pop_f, _ = simular_cenario(ataque_base, defesa_base, f, muralha_inicial, sorte_ondas, 1000, fe_ataque, fe_defesa, bn_val, st.session_state.get('bonus_atacante', []), st.session_state.get('bonus_defensor', []))
             sweet_data.append({"Fulls Defensivos": f, "Ondas Suportadas": ondas_f, "População": pop_f})
             
         df_sweet = pd.DataFrame(sweet_data)
