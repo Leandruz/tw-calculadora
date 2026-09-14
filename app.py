@@ -178,6 +178,9 @@ if 'init_done' not in st.session_state:
     default_def = {'lanceiro': 10000, 'espadachim': 10000}
     query_params = st.query_params
     
+    # Verifica se estamos recebendo uma exportação da URL
+    is_import = any(key.startswith('def_') for key in query_params.keys())
+    
     for k in [u[0] for u in UNIDADES]:
         st.session_state[f'atk_{k}'] = default_atk.get(k, None)
         
@@ -186,9 +189,10 @@ if 'init_done' not in st.session_state:
             try:
                 st.session_state[f'def_{k}'] = int(query_params[f'def_{k}'])
             except ValueError:
-                st.session_state[f'def_{k}'] = default_def.get(k, None)
+                st.session_state[f'def_{k}'] = None if is_import else default_def.get(k, None)
         else:
-            st.session_state[f'def_{k}'] = default_def.get(k, None)
+            # Se for importação e não veio essa tropa, zera (None). Senão, usa padrão.
+            st.session_state[f'def_{k}'] = None if is_import else default_def.get(k, None)
 
 def limpar_tropas():
     for k in [u[0] for u in UNIDADES]:
