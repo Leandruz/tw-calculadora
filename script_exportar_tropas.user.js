@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TW Calculadora - Exportar Tropas
 // @namespace    http://tampermonkey.net/
-// @version      1.5
+// @version      1.6
 // @description  Adiciona um botão para exportar tropas da aldeia atual para a calculadora
 // @author       Leandro Beraldo
 // @match        https://*.tribalwars.com.br/*screen=overview*
@@ -13,7 +13,7 @@
 (function() {
     'use strict';
     
-    var VERSAO_ATUAL = 1.5;
+    var VERSAO_ATUAL = 1.6;
     var URL_SCRIPT = 'https://raw.githubusercontent.com/Leandruz/tw-calculadora/main/script_exportar_tropas.user.js';
 
     var btn = document.createElement('div');
@@ -45,6 +45,9 @@
 
     btn.onclick = function() {
         if (btn.dataset.outdated === "true") return; // Previne execução caso esteja desatualizado
+        
+        var isBR = window.location.hostname.includes('.tribalwars.com.br') || window.location.hostname.includes('.tribalwars.com.pt');
+        var lang = isBR ? 'pt' : 'en';
         
         var mapa = { 'spear': 'lanceiro', 'sword': 'espadachim', 'axe': 'barbaro', 'archer': 'arqueiro', 'light': 'cavalaria_leve', 'marcher': 'arqueiro_cavalo', 'heavy': 'cavalaria_pesada', 'ram': 'ariete', 'catapult': 'catapulta', 'militia': 'milicia' };
         var tropasExportar = {};
@@ -87,12 +90,17 @@
             params.push('def_' + k + '=' + tropasExportar[k]);
         }
 
-        var mapPT = {
+        var unitNameMap = {
             'lanceiro': 'lanceiro', 'espadachim': 'espadachim', 'bárbaro': 'barbaro',
             'arqueiro': 'arqueiro', 'cavalaria leve': 'cavalaria_leve',
             'arqueiro a cavalo': 'arqueiro_cavalo', 'cavalaria pesada': 'cavalaria_pesada',
             'aríete': 'ariete', 'catapulta': 'catapulta', 'paladino': 'paladino',
-            'nobre': 'nobre', 'explorador': 'explorador'
+            'nobre': 'nobre', 'explorador': 'explorador',
+            'spearman': 'lanceiro', 'swordsman': 'espadachim', 'axeman': 'barbaro',
+            'archer': 'arqueiro', 'light cavalry': 'cavalaria_leve',
+            'mounted archer': 'arqueiro_cavalo', 'heavy cavalry': 'cavalaria_pesada',
+            'ram': 'ariete', 'catapult': 'catapulta', 'paladin': 'paladino',
+            'nobleman': 'nobre', 'scout': 'explorador'
         };
 
         var effectNodes = document.querySelectorAll('.village_overview_effect');
@@ -105,8 +113,8 @@
                 
                 if (m[1]) {
                     var rawName = m[1].toLowerCase().trim();
-                    if (mapPT[rawName]) {
-                        var unitKey = mapPT[rawName];
+                    if (unitNameMap[rawName]) {
+                        var unitKey = unitNameMap[rawName];
                         params.push('bonus=' + encodeURIComponent(unitKey + '|' + magnitude + '|' + effectDesc));
                     }
                 } else {
@@ -118,9 +126,11 @@
 
         var urlCalculadora = 'https://defesatribalwars.streamlit.app/'; 
         if (params.length > 0) {
+            params.push('lang=' + lang);
             window.open(urlCalculadora + '?' + params.join('&'), '_blank');
         } else {
-            alert("Não foi possível encontrar tropas nesta tela. Certifique-se de estar na página inicial da aldeia.");
+            var msg = isBR ? "Não foi possível encontrar tropas nesta tela. Certifique-se de estar na página inicial da aldeia." : "Could not find troops on this screen. Make sure you are on the village overview page.";
+            alert(msg);
         }
     };
 
