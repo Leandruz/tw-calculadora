@@ -278,25 +278,49 @@ def limpar_tropas():
         st.session_state[f'def_{k}'] = None
 
 with st.container():
-    cols = st.columns([1.5] + [1]*len(UNIDADES) + [0.5])
-    cols[0].button("🗑️ Limpar", on_click=limpar_tropas, help="Zerar tropas")
-    for i, (key, nome, img, _) in enumerate(UNIDADES):
-        with cols[i+1]: st.markdown(f'<img src="{img}" title="{nome}" class="unit-img">', unsafe_allow_html=True)
+    st.button("🗑️ Limpar Tudo", on_click=limpar_tropas, help="Zerar todas as tropas", type="secondary")
     
     padrao_atk, padrao_def = {}, {}
     
-    cols_atk = st.columns([1.5] + [1]*len(UNIDADES) + [0.5])
-    with cols_atk[0]: st.markdown("<div class='row-label'>Padrão Ataque</div>", unsafe_allow_html=True)
-    for i, (key, nome, _, _) in enumerate(UNIDADES):
-        with cols_atk[i+1]:
+    # Dividir em duas linhas para não encavalar
+    metade = 7
+    unidades_linha1 = UNIDADES[:metade]
+    unidades_linha2 = UNIDADES[metade:]
+    
+    # LINHA 1
+    cols1 = st.columns([1.5] + [1]*len(unidades_linha1) + [0.5])
+    for i, (key, nome, img, _) in enumerate(unidades_linha1):
+        with cols1[i+1]: st.markdown(f'<div style="text-align:center"><img src="{img}" title="{nome}" class="unit-img"></div>', unsafe_allow_html=True)
+        
+    cols_atk1 = st.columns([1.5] + [1]*len(unidades_linha1) + [0.5])
+    with cols_atk1[0]: st.markdown("<div class='row-label' style='margin-top:10px;'>Ataque</div>", unsafe_allow_html=True)
+    for i, (key, nome, _, _) in enumerate(unidades_linha1):
+        with cols_atk1[i+1]:
             padrao_atk[key] = st.number_input(f"atk_{key}", value=None, min_value=0, step=50, placeholder="0", label_visibility="collapsed", disabled=(key=='milicia'), key=f"atk_{key}")
             
-    st.markdown("<div style='height: 10px'></div>", unsafe_allow_html=True)
+    cols_def1 = st.columns([1.5] + [1]*len(unidades_linha1) + [0.5])
+    with cols_def1[0]: st.markdown("<div class='row-label' style='margin-top:10px;'>Defesa</div>", unsafe_allow_html=True)
+    for i, (key, nome, _, _) in enumerate(unidades_linha1):
+        with cols_def1[i+1]:
+            padrao_def[key] = st.number_input(f"def_{key}", value=None, min_value=0, step=50, placeholder="0", label_visibility="collapsed", key=f"def_{key}")
+
+    st.markdown("<hr style='margin: 15px 0; border-color: #1e293b;'>", unsafe_allow_html=True)
+
+    # LINHA 2
+    cols2 = st.columns([1.5] + [1]*len(unidades_linha2) + [0.5])
+    for i, (key, nome, img, _) in enumerate(unidades_linha2):
+        with cols2[i+1]: st.markdown(f'<div style="text-align:center"><img src="{img}" title="{nome}" class="unit-img"></div>', unsafe_allow_html=True)
+        
+    cols_atk2 = st.columns([1.5] + [1]*len(unidades_linha2) + [0.5])
+    with cols_atk2[0]: st.markdown("<div class='row-label' style='margin-top:10px;'>Ataque</div>", unsafe_allow_html=True)
+    for i, (key, nome, _, _) in enumerate(unidades_linha2):
+        with cols_atk2[i+1]:
+            padrao_atk[key] = st.number_input(f"atk_{key}", value=None, min_value=0, step=50, placeholder="0", label_visibility="collapsed", disabled=(key=='milicia'), key=f"atk_{key}")
             
-    cols_def = st.columns([1.5] + [1]*len(UNIDADES) + [0.5])
-    with cols_def[0]: st.markdown("<div class='row-label'>Padrão Defesa</div>", unsafe_allow_html=True)
-    for i, (key, nome, _, _) in enumerate(UNIDADES):
-        with cols_def[i+1]:
+    cols_def2 = st.columns([1.5] + [1]*len(unidades_linha2) + [0.5])
+    with cols_def2[0]: st.markdown("<div class='row-label' style='margin-top:10px;'>Defesa</div>", unsafe_allow_html=True)
+    for i, (key, nome, _, _) in enumerate(unidades_linha2):
+        with cols_def2[i+1]:
             padrao_def[key] = st.number_input(f"def_{key}", value=None, min_value=0, step=50, placeholder="0", label_visibility="collapsed", key=f"def_{key}")
 
 st.markdown("<hr>", unsafe_allow_html=True)
