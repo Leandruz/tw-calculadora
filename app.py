@@ -195,7 +195,7 @@ def simular_combate(atacante, defensor, muralha=20, sorte=0.0, fe_ataque=True, f
         if unidade in UNIDADES_DICT and qtd:
             atk_mod = 1.0
             for b in bonus_atacante:
-                if unidade in b['unidades']:
+                if unidade in b['unidades'] or 'global' in b['unidades']:
                     if b['efeito'] == 'poder de ataque':
                         atk_mod += b['magnitude'] / 100.0
                     elif b['efeito'] == 'Dano do edifício' and unidade in ['ariete', 'catapulta']:
@@ -226,7 +226,7 @@ def simular_combate(atacante, defensor, muralha=20, sorte=0.0, fe_ataque=True, f
         if unidade in UNIDADES_DICT and qtd:
             def_mod = 1.0
             for b in bonus_defensor:
-                if unidade in b['unidades']:
+                if unidade in b['unidades'] or 'global' in b['unidades']:
                     if b['efeito'] == 'poder de defesa':
                         def_mod += b['magnitude'] / 100.0
                     elif b['efeito'] == 'Nível máximo de defesa da muralha' and unidade == 'ariete':
@@ -355,6 +355,8 @@ if 'init_done' not in st.session_state:
     st.session_state['init_done'] = True
     st.session_state['bonus_atacante'] = []
     st.session_state['bonus_defensor'] = []
+    st.session_state['is_night_bonus_init'] = False
+    st.session_state['bn_pct_init'] = 300
     default_atk = {'barbaro': 6000, 'cavalaria_leve': 3000, 'ariete': 300}
     default_def = {'lanceiro': 10000, 'espadachim': 10000}
     
@@ -388,7 +390,7 @@ if 'init_done' not in st.session_state:
                     efeitos.extend(["poder de ataque", "poder de defesa"])
                 elif "dano" in efeito_str or "damage" in efeito_str:
                     efeitos.append("Dano do edifício")
-                elif "muralha" in efeito_str or "wall" in efeito_str or (unidade == "global" and ("cerco" in efeito_str or "força de defesa" in efeito_str or "defense" in efeito_str or "siege" in efeito_str)):
+                elif "muralha" in efeito_str or "wall" in efeito_str or (unidade == "global" and ("cerco" in efeito_str or "força de defesa" in efeito_str or "siege" in efeito_str)):
                     efeitos.append("Nível máximo de defesa da muralha")
                     unidade = "ariete"
                 elif "ataque" in efeito_str or "attack" in efeito_str:
@@ -400,6 +402,11 @@ if 'init_done' not in st.session_state:
                     
                 if unidade == "global" and not efeitos: continue
                 
+                if unidade == "global" and "poder de defesa" in efeitos:
+                    st.session_state['is_night_bonus_init'] = True
+                    st.session_state['bn_pct_init'] = magnitude
+                    efeitos.remove("poder de defesa")
+                    
                 for ef in efeitos:
                     st.session_state['bonus_defensor'].append({
                         'efeito': ef,
@@ -466,7 +473,7 @@ with st.expander(t['effects_title']):
                 
         if st.session_state['bonus_atacante']:
             for i, b in enumerate(st.session_state['bonus_atacante']):
-                st.info(f"{t[b['efeito']]} (+{b['magnitude']}%) {t['para']} {', '.join([next(u[1][lang] for u in UNIDADES if u[0] == un) for un in b['unidades']])}")
+                st.info(f"{t[b['efeito']]} (+{b['magnitude']}%) {t['para']} {', '.join([next((u[1][lang] for u in UNIDADES if u[0] == un), 'Todas as unidades' if lang == 'pt' else 'All units') for un in b['unidades']])}")
             if st.button(t['clear_atk'], key="clear_atk_btn"):
                 st.session_state['bonus_atacante'] = []
                 st.rerun()
@@ -487,7 +494,7 @@ with st.expander(t['effects_title']):
                 
         if st.session_state['bonus_defensor']:
             for i, b in enumerate(st.session_state['bonus_defensor']):
-                st.success(f"{t[b['efeito']]} (+{b['magnitude']}%) {t['para']} {', '.join([next(u[1][lang] for u in UNIDADES if u[0] == un) for un in b['unidades']])}")
+                st.success(f"{t[b['efeito']]} (+{b['magnitude']}%) {t['para']} {', '.join([next((u[1][lang] for u in UNIDADES if u[0] == un), 'Todas as unidades' if lang == 'pt' else 'All units') for un in b['unidades']])}")
             if st.button(t['clear_def'], key="clear_def_btn"):
                 st.session_state['bonus_defensor'] = []
                 st.rerun()
@@ -507,9 +514,9 @@ with c4:
 
 c5, c6, c7, c8 = st.columns(4)
 with c5:
-    is_night_bonus = st.toggle(t['nb'], value=False)
+    is_night_bonus = st.toggle(t['nb'], value=st.session_state.get('is_night_bonus_init', False))
 with c6:
-    bn_pct = st.number_input(t['nb_pct'], min_value=0, value=300, step=10, disabled=not is_night_bonus)
+    bn_pct = st.number_input(t['nb_pct'], min_value=0, value=st.session_state.get('bn_pct_init', 300), step=10, disabled=not is_night_bonus)
 with c8:
     st.markdown("<br>", unsafe_allow_html=True)
     simular_btn = st.button(t['sim_btn'], use_container_width=True, type="primary")
