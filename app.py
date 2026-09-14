@@ -172,6 +172,20 @@ def simular_cenario(ataque_base, defesa_base, qtd_fulls, muralha_inicial, sorte_
 st.markdown("<div class='main-title'>🛡️ Calculadora de Defesa</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitle'>Configure os templates de ataque e defesa para simular cenários de resistência em massa.</div>", unsafe_allow_html=True)
 
+with st.expander("🛠️ Instalar Script de Importação Automática (Tampermonkey)"):
+    st.markdown("""
+    **Como usar:**
+    1. Copie o código abaixo.
+    2. Crie um novo script no **Tampermonkey** no seu navegador e cole o código.
+    3. No jogo, acesse a **Visualização da Aldeia**. Clique no ícone de escudo 🛡️ que aparecerá ao lado das suas missões. A calculadora abrirá já preenchida!
+    """)
+    try:
+        with open("script_exportar_tropas.user.js", "r", encoding="utf-8") as f:
+            script_code = f.read()
+        st.code(script_code, language="javascript")
+    except FileNotFoundError:
+        st.error("Script não encontrado no servidor.")
+
 if 'init_done' not in st.session_state:
     st.session_state['init_done'] = True
     default_atk = {'barbaro': 6000, 'cavalaria_leve': 3000, 'ariete': 300}
