@@ -398,7 +398,7 @@ if 'init_done' not in st.session_state:
                 elif "defesa" in efeito_str or "defense" in efeito_str:
                     efeitos.append("poder de defesa")
                 else:
-                    efeitos.append(efeito_str)
+                    pass
                     
                 if unidade == "global" and not efeitos: continue
                 
