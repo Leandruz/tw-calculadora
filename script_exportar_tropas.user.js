@@ -1,15 +1,21 @@
 // ==UserScript==
 // @name         TW Calculadora - Exportar Tropas
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Adiciona um botão para exportar tropas da aldeia atual para a calculadora
-// @author       Você
+// @author       Leandro Beraldo
 // @match        https://*.tribalwars.com.br/*screen=overview*
+// @updateURL    https://raw.githubusercontent.com/Leandruz/tw-calculadora/main/script_exportar_tropas.user.js
+// @downloadURL  https://raw.githubusercontent.com/Leandruz/tw-calculadora/main/script_exportar_tropas.user.js
 // @grant        none
 // ==/UserScript==
 
 (function() {
     'use strict';
+    
+    var VERSAO_ATUAL = 1.4;
+    var URL_SCRIPT = 'https://raw.githubusercontent.com/Leandruz/tw-calculadora/main/script_exportar_tropas.user.js';
+
     var btn = document.createElement('div');
     btn.className = 'quest';
     btn.id = 'export_troops_btn';
@@ -17,7 +23,29 @@
     btn.innerText = "🛡️";
     btn.title = "Exportar Tropas para Calculadora";
 
+    // Verifica se há alguma atualização no GitHub
+    fetch(URL_SCRIPT, { cache: "no-store" })
+        .then(res => res.text())
+        .then(text => {
+            var match = text.match(/@version\s+([\d\.]+)/);
+            if (match && parseFloat(match[1]) > VERSAO_ATUAL) {
+                // Altera o visual do botão para indicar atualização
+                btn.innerText = "🔄";
+                btn.style.backgroundColor = "#ffcccc"; // Fundo avermelhado
+                btn.style.border = "1px solid #cc0000";
+                btn.title = "Atualização Disponível! Clique para atualizar o script.";
+                
+                // Sobrescreve a função de clique para redirecionar para a atualização
+                btn.onclick = function() {
+                    window.location.href = URL_SCRIPT;
+                };
+                btn.dataset.outdated = "true";
+            }
+        }).catch(err => console.log("Erro ao checar versão do script:", err));
+
     btn.onclick = function() {
+        if (btn.dataset.outdated === "true") return; // Previne execução caso esteja desatualizado
+        
         var mapa = { 'spear': 'lanceiro', 'sword': 'espadachim', 'axe': 'barbaro', 'archer': 'arqueiro', 'light': 'cavalaria_leve', 'marcher': 'arqueiro_cavalo', 'heavy': 'cavalaria_pesada', 'ram': 'ariete', 'catapult': 'catapulta', 'militia': 'milicia' };
         var tropasExportar = {};
         
