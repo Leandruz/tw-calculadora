@@ -32,9 +32,23 @@ st.markdown("""
     .unit-img:hover { opacity: 1; transform: scale(1.1); transition: 0.2s ease-in-out; }
     .row-label { font-size: 0.9rem; font-weight: 600; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; }
     
+    /* Ocultar botões +/- do Streamlit e botão de limpar */
+    div[data-testid="stNumberInputStepUp"], div[data-testid="stNumberInputStepDown"], 
+    button[aria-label="Step down"], button[aria-label="Step up"], 
+    button[aria-label="Clear value"] { display: none !important; }
+    
+    /* Comprimir os inputs e reduzir a fonte */
+    input[type=number] { 
+        font-size: 0.8rem !important; 
+        padding: 4px 2px !important; 
+        text-align: center !important; 
+        -moz-appearance: textfield; 
+    }
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
+    
+    /* Diminuir o gap das colunas na linha de tropas */
+    div[data-testid="column"] { padding: 0 3px !important; }
     
     hr { border-color: #334155; margin: 30px 0; }
 </style>
