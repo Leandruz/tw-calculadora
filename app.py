@@ -176,9 +176,19 @@ if 'init_done' not in st.session_state:
     st.session_state['init_done'] = True
     default_atk = {'barbaro': 6000, 'cavalaria_leve': 3000, 'ariete': 300}
     default_def = {'lanceiro': 10000, 'espadachim': 10000}
+    query_params = st.query_params
+    
     for k in [u[0] for u in UNIDADES]:
         st.session_state[f'atk_{k}'] = default_atk.get(k, None)
-        st.session_state[f'def_{k}'] = default_def.get(k, None)
+        
+        # Lê os parâmetros da URL para a defesa, caso existam
+        if f'def_{k}' in query_params:
+            try:
+                st.session_state[f'def_{k}'] = int(query_params[f'def_{k}'])
+            except ValueError:
+                st.session_state[f'def_{k}'] = default_def.get(k, None)
+        else:
+            st.session_state[f'def_{k}'] = default_def.get(k, None)
 
 def limpar_tropas():
     for k in [u[0] for u in UNIDADES]:
